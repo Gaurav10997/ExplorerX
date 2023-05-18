@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken')
-
+const { promisify } = require('util')
 const User = require('./../models/userModel')
 const catchAsync = require('./../utils/catchAsync')
 const AppError = require('./../utils/appError')
@@ -56,7 +56,39 @@ const signup = catchAsync(async(req,res,next) => {
 
     })
 })
+
+const protect = catchAsync(async(req,res,next) => {
+    // getting token an and check of its there 
+     let token ; 
+     if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
+        token = req.headers.authorization.split(' ')[1] ;
+    }
+    if(!token){
+        return next(new AppError('Please log in to get access', 401));
+    }
+
+    // 2> Verification Token 
+    const decoded = await promisify(jwt.verify)(token,'processenvjwtsecret')
+    console.log(decoded);
+
+    const freshUser = await User.findById(decoded.id); 
+ 
+
+    if(!freshUser){
+        next(new AppError('The user Token is not exist'  , 401))
+    }
+    if(freshUser.changesPasswordAfter(decoded.iat)) {
+        return next(new AppError('user recently changed password ! please log in again '),401)
+
+    }
+
+    //go to the protected data
+    req.user = freshUser
+    next()
+
+})
 exports.module = {
     signup,
-    login
+    login,
+    protect
 }
