@@ -87,8 +87,18 @@ const protect = catchAsync(async(req,res,next) => {
     next()
 
 })
+const restrictTo = (...args) => { 
+    return(req,res,next)=>{
+        if(!args.includes(req.user.role)){
+            return next(new AppError('You are not authorized to perform this action ', 403))
+        } 
+        next();
+    }
+  
+}
 exports.module = {
     signup,
     login,
-    protect
+    protect,
+    restrictTo
 }
