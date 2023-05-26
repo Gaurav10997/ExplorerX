@@ -34,7 +34,6 @@ const signup = catchAsync(async(req,res,next) => {
 
  const login = catchAsync(async(req, res, next) => {
     const { email, password } = req.body;
-
     // check if email and password esidet 
     if (!email || !password) {
        return next(new AppError('Please provide email and password', 400));
@@ -96,9 +95,32 @@ const restrictTo = (...args) => {
     }
   
 }
+const  forgotPassword = catchAsync( async (req , res , next ) => {
+    // 1. Get user based on posted emnail 
+    
+    const user = await User.findOne({email : req.body.email})
+    console.log(user);
+    if(!user){
+        return next(new AppError("There is no user with this email address ") , 404);
+    }
+    console.log(user);
+    // generate the random reset Token 
+    
+    const resetToken = user.createPasswordResetToken();
+    await user.save({validateBeforeSave: false})
+
+    // send it to the user's email 
+
+
+})
+const resetPassword = (req , res , next ) => {
+
+}
 exports.module = {
     signup,
     login,
     protect,
-    restrictTo
+    restrictTo,
+    forgotPassword,
+    resetPassword
 }

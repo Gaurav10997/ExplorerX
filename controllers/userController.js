@@ -1,17 +1,19 @@
 const User = require('./../models/userModel')
 const catchAsync = require('../utils/catchAsync')
+const handleFactory = require('./../controllers/handleFactory')
 
+exports.getAllusers = async(req,res) =>{
+  const user = await User.find()
 
-exports.getAllusers = catchAsync(async (req, res,next) => {
-
-  const users = await User.find();
   res.status(200).json({
-    status: 'success',
-    results:users.length ,
-    data: {
-      users
+    result:"Success",
+    data:{
+      data:user
     }
-  });
-});
+  })
+}
+exports.getUser = handleFactory.getOne(User)
+exports.deleteUser  = handleFactory.deleteOne(User)
+exports.updateUser  = handleFactory.updateOne(User);
 
 
