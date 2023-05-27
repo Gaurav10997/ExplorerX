@@ -10,9 +10,9 @@ Router
 .route('/:id')
 .get(userController.getUser)
 
-Router.post('/signup', authController.module.signup)
-Router.post('/login', authController.module.login)
-Router.post('/reset', authController.module.resetPassword)
-Router.post('/forgotpassword', authController.module.forgotPassword)
+Router.post('/signup', authController.signup)
+Router.post('/login', authController.login)
+Router.post('/forgotpassword', authController.forgotPassword)
+Router.patch('/resetpassword/:token', authController.resetPassword)
 
 module.exports = Router;

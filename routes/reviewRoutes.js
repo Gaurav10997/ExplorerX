@@ -14,8 +14,8 @@ const router = express.Router({mergeParams:true})
 router
 .route('/')
 .get(reviewController.getAllReviews)
-.post(authController.module.protect, 
-    authController.module.restrictTo('user' ),
+.post(authController.protect, 
+    authController.restrictTo('user' ),
     reviewController.setTourUserIds,
      reviewController.createReview)
 

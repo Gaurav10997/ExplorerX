@@ -1,8 +1,10 @@
 const jwt = require('jsonwebtoken')
 const { promisify } = require('util')
 const User = require('./../models/userModel')
+const crypto = require('crypto')
 const catchAsync = require('./../utils/catchAsync')
 const AppError = require('./../utils/appError')
+const sendEmail = require('../utils/email')
 const signToken = id =>{
     return jwt.sign({
         id
@@ -10,7 +12,7 @@ const signToken = id =>{
         expiresIn: '1d'
     })
 }
-const signup = catchAsync(async(req,res,next) => {
+exports.signup = catchAsync(async(req,res,next) => {
     // problem is that everyone can use to login and signup using admin 
     // const newUser = await User.create(req.body);
     const newUser = await(User.create({
@@ -32,7 +34,7 @@ const signup = catchAsync(async(req,res,next) => {
         
 })
 
- const login = catchAsync(async(req, res, next) => {
+exports.login = catchAsync(async(req, res, next) => {
     const { email, password } = req.body;
     // check if email and password esidet 
     if (!email || !password) {
@@ -56,7 +58,7 @@ const signup = catchAsync(async(req,res,next) => {
     })
 })
 
-const protect = catchAsync(async(req,res,next) => {
+exports.protect = catchAsync(async(req,res,next) => {
     // getting token an and check of its there 
      let token ; 
      if(req.headers.authorization && req.headers.authorization.startsWith('Bearer')){
@@ -86,7 +88,7 @@ const protect = catchAsync(async(req,res,next) => {
     next()
 
 })
-const restrictTo = (...args) => { 
+exports.restrictTo = (...args) => { 
     return(req,res,next)=>{
         if(!args.includes(req.user.role)){
             return next(new AppError('You are not authorized to perform this action ', 403))
@@ -95,32 +97,64 @@ const restrictTo = (...args) => {
     }
   
 }
-const  forgotPassword = catchAsync( async (req , res , next ) => {
-    // 1. Get user based on posted emnail 
-    
+exports.forgotPassword = catchAsync( async (req , res , next ) => {
+    // 1. Get user based on posted email 
     const user = await User.findOne({email : req.body.email})
-    console.log(user);
     if(!user){
-        return next(new AppError("There is no user with this email address ") , 404);
+        return next(new AppError("There is no user with this email address") , 404);
     }
     console.log(user);
-    // generate the random reset Token 
-    
     const resetToken = user.createPasswordResetToken();
     await user.save({validateBeforeSave: false})
 
     // send it to the user's email 
+    const resetUrl = `${req.protocol}://${req.get('host')}/api/v1/users/resetpassword/${resetToken}`
 
+    const message = `Forgot Your PassWord? Submit a Patch Request with Your new PassWord and passWord Confirm
+    to : ${resetUrl}.\n If You didn't forgot your password , please Ignore`
+    try{
+        await sendEmail({
+            email: user.email,
+            text:message,
+            subject : "Password Reset Request (Valid for 10 mins)",
+        })
+        res.status(200).json({
+            status : "success" ,
+            messsage: "Token Sent To Email"
+            })
+    }catch(err){
+        console.log(err);
+        return next(new AppError('there was an error , try again later',504))
+    }
+    
 
 })
-const resetPassword = (req , res , next ) => {
+exports.resetPassword = async(req , res , next ) => {
+    // 1. Get user based on token 
+    const hashedToken = crypto.createHash('sha256').update(req.params.token)
+    .digest('hex')
+    const user = await User.findOne({passwordResetToken : hashedToken , passwordResetExpires : {$gt : Date.now()}})
 
-}
-exports.module = {
-    signup,
-    login,
-    protect,
-    restrictTo,
-    forgotPassword,
-    resetPassword
+    // 2. If token is Not Expired , and their is user , set The new password
+    if(!user){
+        return next(new AppError('Token is Invalid or has Expired' , 400));
+    }
+    user.password = req.body.password;
+    user.confirmPassword = req.body.confirmPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    // please do this again security issues are there 
+    await user.save({validateBeforeSave:false})
+
+    //3 . update changedPasswordAt property for the user 
+
+    const token = signToken(user._id);
+
+    res.status(200).json({
+        status:'success',
+        token
+    })
+
+
 }

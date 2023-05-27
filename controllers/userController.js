@@ -12,6 +12,12 @@ exports.getAllusers = async(req,res) =>{
     }
   })
 }
+
+exports.getMe = (req , res , next) =>{
+  req.params.id = req.user.id ; 
+  next()
+}
+
 exports.getUser = handleFactory.getOne(User)
 exports.deleteUser  = handleFactory.deleteOne(User)
 exports.updateUser  = handleFactory.updateOne(User);
