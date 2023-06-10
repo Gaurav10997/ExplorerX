@@ -1,6 +1,6 @@
 const mongoose = require('mongoose')
 const validator = require('validator')
-const bcryptjs = require('bcryptjs')
+const bcrypt = require('bcryptjs')
 const crypto = require('crypto')
 
 const userSchema = new mongoose.Schema({
@@ -55,16 +55,16 @@ userSchema.pre('save' , function(next){
 userSchema.pre('save' , async function(next) {
     // encrypt password before saving
     if(!this.isModified('password')) return next();
-    this.password = await bcryptjs.hash(this.password , 12);
+    this.password = await bcrypt.hash(this.password , 12);
     this.passwordConfirm = undefined; 
     next();
 })
 
-userSchema.methods.correctPassword = async function(candidatePassword ,userPassword ){
+userSchema.methods.correctPassword = async function(candidatePassword , userPassword ){
     
     // compare candidate password with user password
-    const isMatch = await bcryptjs.compare(candidatePassword , userPassword);
-    console.log("lsdk;f");
+    const isMatch = await bcrypt.compare(candidatePassword , userPassword);
+
     return isMatch;
 }
 
@@ -73,6 +73,7 @@ userSchema.methods.changesPasswordAfter = function(JWTimesStamps){
         const changedTimestamp = parseInt( this.paswordChanged.getTime() /1000 ,10) ; 
 
        return JWTimesStamps < changedTimestamp
+       
     }
 }
 

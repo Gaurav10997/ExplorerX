@@ -5,8 +5,11 @@ const tourRouter = require('./routes/tourRoutes');
 const userRouter = require('./routes/userRoutes');
 const reviewRouter = require('./routes/reviewRoutes')
 const globalErrorHandler = require('./controllers/errorController')
+const cors = require('cors')
+
 
 const app = express();
+app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
 app.use((req, res, next) => {
