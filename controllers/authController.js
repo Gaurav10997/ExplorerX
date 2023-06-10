@@ -11,7 +11,7 @@ const signToken = id =>{
     return jwt.sign({
         id
     },'processenvjwtsecret',{
-        expiresIn: '1d'
+        expiresIn: '10d'
     })
 }
 
@@ -59,7 +59,7 @@ exports.login = catchAsync(async(req, res, next) => {
     //check if user exists && password is correct 
 
     const user = await User.findOne({email}).select('+password')
-    const correct = await user.correctPassword(password,user.password)
+    const correct = await user?.correctPassword(password,user.password)
     if(!user || !correct){
         return next(new AppError('Invalid email or password', 401));
     }
@@ -97,6 +97,7 @@ exports.protect = catchAsync(async(req,res,next) => {
     next()
 
 })
+
 exports.restrictTo = (...args) => { 
     return(req,res,next)=>{
         if(!args.includes(req.user.role)){
